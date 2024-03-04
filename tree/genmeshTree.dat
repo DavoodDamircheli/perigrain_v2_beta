@@ -1,5 +1,0 @@
-Class: ReturnValue
-    Method: __init__
-    Method: get_edges
-    Method: plot
-Top-level function: genmesh
