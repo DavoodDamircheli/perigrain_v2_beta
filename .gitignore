@@ -1,0 +1,22 @@
+
+
+#    Ignore a specific file: file.txt
+#    Ignore all .log files: *.log
+#    Ignore a specific directory: bin/
+#    Ignore all files in a specific directory: tmp/**/*
+#    Exclude specific files from an ignored pattern: !important.log
+
+bin/
+data/
+lib/
+localExaOutput/
+meshdata/
+obj/
+output/
+results/
+tempDav/
+tempDav/nciVisul
+*.btr
+tempDav/aux*
+*.h5
+examples_output/
