@@ -1,0 +1,9 @@
+gekko
+gmsh
+h5py
+matplotlib
+meshio
+numpy
+pathos
+pygmsh
+seaborn
