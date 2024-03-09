@@ -20,3 +20,6 @@ tempDav/nciVisul
 tempDav/aux*
 *.h5
 examples_output/
+tree/
+__pychache__
+localExamOutput/
