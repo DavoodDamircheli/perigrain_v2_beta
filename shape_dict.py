@@ -1524,7 +1524,7 @@ def kalthoff_3d_plate_beta(ix=6e-3, iy=2e-3, iz=.2e-3, Ln=1e-3, Wn=0.5e-3,distan
 
 
     #save the mesh
-    gmsh.fltk.run()
+    #gmsh.fltk.run()
     gmsh.write(msh_file)
     gmsh.finalize()
     
