@@ -1,7 +1,7 @@
 #!/bin/bash
 path="`dirname \"$0\"`"
-hpc="no"
-#hpc="yes"
+#hpc="no"
+hpc="yes"
 
 non_hpc_cores=4
 
@@ -79,7 +79,7 @@ dirname="kalthoff3d"
 
 if [ "$hpc" = "yes" ]
 then
-data_output_loc="/work/$USER/peri-wheel-output/$dirname"
+data_output_loc="/work/$USER/periHpc-output/$dirname"
 else
 data_output_loc="examples_output/$dirname"
 fi
@@ -90,7 +90,7 @@ plot="--plot"
 echo "#####################################################"
 
 # paths
-dir="$data_output_loc/kalthof3d_1"
+dir="$data_output_loc/kalthof3d_hpc_1"
 #dir=$data_output_loc/${frac}_${arglist}
 config=$dir/main.conf
 sfile=$dir/setup.h5

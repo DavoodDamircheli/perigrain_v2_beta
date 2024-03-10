@@ -1,0 +1,21 @@
+#!/bin/bash
+#PBS -q workq 
+# ------------project allocation code
+#PBS -A hpc_perigrain2
+# ------ number of nodes and number of processors on each node
+#PBS -l nodes=4:ppn=20
+#PBS -l walltime=20:00:00 
+# Send stdout to a named file: move to external command line
+#
+# Merge stderr messages with stdout
+#PBS -j oe 
+#
+# Give the job a name for easier tracking
+#PBS -N kalthoff3D-1
+#
+# Shell commands may begin here
+
+export PROJ_DIR=$HOME/kalthoff3D
+cd $PROJ_DIR
+
+./examples/hpcExample/3d-kalthof-hpc/run.sh
