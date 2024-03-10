@@ -22,4 +22,5 @@ tempDav/aux*
 examples_output/
 tree/
 __pychache__/
+__pychache__
 localExamOutput/
