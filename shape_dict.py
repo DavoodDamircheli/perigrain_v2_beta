@@ -11,14 +11,16 @@ from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
 
 import pdb
-#pdb.set_trace()
+pdb.set_trace()
 class Shape:
     """Returns the boundary nodes and the nonconvex_interceptor"""
-    def __init__(self, P, nonconvex_interceptor=None, msh_file = None, pygmsh_geom=None):
+    def __init__(self, P, nonconvex_interceptor=None, msh_file = None, pygmsh_geom=None, scale_mesh_to=None, centroid_origin=False):
         self.P = P
         self.pygmsh_geom = pygmsh_geom
         self.nonconvex_interceptor = nonconvex_interceptor
         self.msh_file = msh_file
+        self.scale_mesh_to = scale_mesh_to
+        self.centroid_origin = centroid_origin
 
     def plot(self, bdry_arrow=True, extended_bdry=True, angle_bisector=True, plot_bounding_ball=False, bounding_ball_rad=1e-3, bounding_ball_steps=30, plot_included_ball=False, included_ball_rad=0.5e-3, included_ball_steps=30):
         """Plot the shape
@@ -77,9 +79,8 @@ class Shape:
                 # plt.gca().set_axis_off()
                 plt.show()
             else:
-                print("we need to add the 3d plot to it")
+                pass
 
-                
 class NonConvexInterceptor(object):
     """ A set of lines that intersect with bonds that extend beyond the domain"""
     def __init__(self, obt_bisec, ext_bdry, unit_normal, l_dir):
@@ -89,6 +90,7 @@ class NonConvexInterceptor(object):
         self.l_dir = l_dir
 
         self.use = 'all'
+        self.proj_3d = 'xy'
         
     def all(self):
         """all lines combined
@@ -164,7 +166,7 @@ def gen_nonconvex_interceptors(P, extension = 5e-5 ):
             t_list = []
             # find the intersections with other lines (excluding l(i), l(i+1))
             for j in range(n):
-                if j not in [i, j+2]:
+                if j not in [i, j+1]:
                     mat = np.c_[ v, P[j]-P[(j+1)%n] ]
                     b = P[j] - A0
 
@@ -198,29 +200,8 @@ def gen_nonconvex_interceptors(P, extension = 5e-5 ):
     # return out
     return NonConvexInterceptor(obt_bisec=np.array(obt_bisec), ext_bdry=B_ext, unit_normal=unit_normal, l_dir=l_dir)
 
-#----------------------for kalthoff_3d  we dont need this---------------
-'''
-def gen_nonconvex_interceptors_3d(P, extension = 5e-5 ):
-    """
-    :P: A counterclockwise oriented polygon
-    :returns: nx4 array, each row contains the endpoint of each interceptor
-
-    """
-    # we nee to return A0, A1 that are endo points of the intercepter!!!
-    """ 
-    we need to call the nonconvex_part_kalthoff_3d part
-    create the mesh and put the endPoint of the mesh in the 
-    A0 and A1
-    """
-    obt_bisec = []
-    obt_bisec.append( [A0[0], A0[1], A1[0], A1[1]] )
 
 
-    B_ext = np.append(P_ext, np.roll(P_ext,-1, axis = 0), axis = 1)
-
-    return NonConvexInterceptor(obt_bisec=np.array(obt_bisec), ext_bdry=B_ext, unit_normal=unit_normal, l_dir=l_dir)
-
-'''
 def line_1d():
     return Shape(P=None, nonconvex_interceptor=None, msh_file='meshdata/1d/line.msh')
 
@@ -435,8 +416,7 @@ def kalthoff(l=200e-3, s=100e-3, dist=50e-3, a=1.5e-3):
         ])
     nci = gen_nonconvex_interceptors(P)
     nci.use = 'bisec'
-    #print(nci)
-    #print(P)
+    # print(nci)
     return Shape(P, nci)
 
 def kalthoff_simpler(l=200e-3, s=100e-3, dist=50e-3, a=1.5e-3):
@@ -458,6 +438,48 @@ def kalthoff_simpler(l=200e-3, s=100e-3, dist=50e-3, a=1.5e-3):
     nci.use = 'bisec'
     # print(nci)
     return Shape(P, nci)
+
+
+
+def kalthoff3d(xyz=[0,0,0], L1=200e-3, L2=100e-3, L3=9e-3, meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'):
+# def kalthoff3d(xyz=[-10,10,10], L1=20, L2=20, L3=20, meshsize=1, meshdata_dir='meshdata', filename_suffix='00'):
+
+    msh_file = meshdata_dir+'/k3d_'+str(filename_suffix)+'.msh'
+    gmsh.initialize()
+
+    ## See: https://gmsh.info/doc/texinfo/gmsh.html#index-gmsh_002fmodel_002focc_002faddSphere
+    ## for more gmsh commands  and examples with python
+    gmsh.model.occ.addRectangle(xyz[0], xyz[1], xyz[2], L1, L2, tag=1)
+    nz = L3/meshsize
+
+    # extruding the line: dimension 2, tag 1 i.e., (2,1)
+    # 2nd, 3rd, 4th arguments are x, y, z values to which to extrude
+    # numElements is the number of steps by which we extrude, heights is the scaling factor
+    gmsh.model.occ.extrude([(2, 1)], 0, 0, L3, numElements=[nz], heights=[1])
+
+    gmsh.option.setNumber("Mesh.Algorithm", 6);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 1);
+    gmsh.option.setNumber("General.Verbosity", 0);
+
+    gmsh.model.occ.synchronize() # obligatory before generating the mesh
+    gmsh.model.mesh.generate(3) # generate a 3D mesh...
+    gmsh.write(msh_file) # save to file
+    gmsh.finalize() # close gmsh, as opposed to initialize()
+
+    c1x = (200/2-50/2-1.5/2)*1e-3
+    c2x = (200/2+50/2+1.5/2)*1e-3
+    c1y = (50-1.5/2)*1e-3
+
+    crack_1 = [c1x, c1y, c1x, 100e-3 + 1e-4]
+    crack_2 = [c2x, c1y, c2x, 100e-3 + 1e-4]
+    bisec = [crack_1, crack_2]
+    nonconvex_interceptor = NonConvexInterceptor(obt_bisec=bisec, ext_bdry=None, unit_normal=None, l_dir=None)
+    nonconvex_interceptor.use = 'bisec'
+    nonconvex_interceptor.proj_3d = 'xy'
+
+    return Shape(P=None, nonconvex_interceptor=nonconvex_interceptor, msh_file=msh_file)
 
 
 def vase(l=4e-3, s=1e-3, amp=0.5e-3, steps = 20, n_pi=4, phase_1=np.pi/2, phase_2=np.pi/2):
@@ -1292,6 +1314,67 @@ def gmsh_test(scaling=1e-3, meshsize=1e-3):
 #######################################################################
 #                                 3D                                  #
 #######################################################################
+#######################################################################
+
+#-------------- double sphere-------------------------
+def hollow_sphere(R=200e-3, r=100e-3, meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'):
+    msh_file = meshdata_dir+'/hollow_sphere_'+str(filename_suffix)+'.msh'
+    # Initialize Gmsh
+    gmsh.initialize()
+
+    # Create a new model
+    gmsh.model.add("Sphere with Hollow Sphere")
+    myOrigx, myOrigy, myOrigz = 0,0,0
+    cx = -myOrigx
+    cy = -myOrigy
+    cz = -myOrigz
+    # Parameters for the radii
+    # R   : Outer sphere radius
+    # r   : Inner sphere radius
+
+    # Global characteristic length for finer mesh
+    lc = meshsize  # Adjust this value to make the mesh finer or coarser
+
+    # Add the outer sphere
+    outer_sphere = gmsh.model.occ.addSphere(cx, cy, cz, R)
+
+    # Add the inner sphere
+    inner_sphere = gmsh.model.occ.addSphere(cx, cy, cz, r)
+
+    # Perform a boolean difference to subtract the inner sphere from the outer sphere
+    gmsh.model.occ.cut([(3, outer_sphere)], [(3, inner_sphere)])
+
+    # Synchronize the model
+    gmsh.model.occ.synchronize()
+
+    # Set the mesh size for the entire model
+    gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lc)
+
+    
+
+    gmsh.option.setNumber("Mesh.Algorithm", 6);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 1);
+    gmsh.option.setNumber("General.Verbosity", 0);
+
+    gmsh.model.occ.synchronize() # obligatory before generating the mesh
+    # Generate the mesh
+    gmsh.model.mesh.generate(3)
+    # Optionally, save the mesh to a file
+    
+    gmsh.write(msh_file) # save to file
+   
+    # Finalize Gmsh
+    gmsh.finalize()
+    nonconvex_vertex =[r,cx,cy,cz]
+    #print(nonconvex_vertex)
+    nci = NonConvexInterceptor(obt_bisec=np.array(nonconvex_vertex), ext_bdry=None, unit_normal=None, l_dir=None)
+
+    
+    nci.use = 'bisec'
+    return Shape(P=None,nonconvex_interceptor=nci, msh_file=msh_file)
+
 def kalthoff_3d_plate(ix=6e-3, iy=2e-3,iz=.2e-3, TH = 1e-3, theta = 20, distance_from_corner=1e-3,conveTol=.2e-3,   meshsize=.3e-3, meshdata_dir='meshdata', filename_suffix='00'):
     '''
     In this function we find the blocks of nodes and remove all the bonds from each block 
@@ -1550,9 +1633,6 @@ def kalthoff_3d_plate_beta(ix=6e-3, iy=2e-3, iz=.2e-3, Ln=1e-3, Wn=0.5e-3,distan
 
 
 #-----------------------END     Kalthof with rectangel notch---------------------------
-
-
-
 
 
 
@@ -2049,12 +2129,12 @@ def creat_nonvexpart_original(ix, iy, TH, theta, wz, imx, imy, imz, conveTol, di
 
 #----------------------------plus 3D-----------------------------------------------------
 
-def create_cube(x, y, z, size):
-    """
-    Function to create a cube at position (x, y, z) with the specified size.
-    """
-    return gmsh.model.occ.addBox(x, y, z, size, size, size)
-
+# def create_cube(x, y, z, size):
+#     """
+#     Function to create a cube at position (x, y, z) with the specified size.
+#     """
+#     return gmsh.model.occ.addBox(x, y, z, size, size, size)
+#
 
 def randomConvex3d(n_shape=20, r_sphere=10,meshsize=5, meshdata_dir='meshdata', filename_suffix='00'):
     msh_file = meshdata_dir+'/random_convex_3d_'+str(filename_suffix)+'.msh'
@@ -2110,6 +2190,96 @@ def randomConvex3d(n_shape=20, r_sphere=10,meshsize=5, meshdata_dir='meshdata', 
 
     return Shape(P=None,nonconvex_interceptor=None, msh_file=msh_file)
 
+
+
+def create_cube(x, y, z, lx, ly=1e-3, lz=1e-3):
+    return gmsh.model.occ.addBox(x, y, z, lx, ly, lz)
+
+def plus3d_longHand(l=1e-3, l2=2e-3, meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'):
+    msh_file = meshdata_dir + '/plus3d_' + str(filename_suffix) + '.msh'
+    gmsh.initialize()
+
+    cube_size = l
+    arm_length = l2
+
+    # Central cube
+    central_cube = create_cube(-cube_size/2, -cube_size/2, -cube_size/2, cube_size, cube_size, cube_size)
+
+    # Arm cubes
+    arm1 = create_cube(-cube_size/2, cube_size/2, -cube_size/2, cube_size, arm_length, cube_size)  # Positive y direction
+    arm2 = create_cube(-cube_size/2, -cube_size/2 - arm_length, -cube_size/2, cube_size, arm_length, cube_size)  # Negative y direction
+    arm3 = create_cube(cube_size/2, -cube_size/2, -cube_size/2, arm_length, cube_size, cube_size)  # Positive x direction
+    arm4 = create_cube(-cube_size/2 - arm_length, -cube_size/2, -cube_size/2, arm_length, cube_size, cube_size)  # Negative x direction
+
+    # Fuse the cubes to form the plus shape
+    gmsh.model.occ.synchronize()
+    entities = gmsh.model.occ.fuse([(3, central_cube)], [(3, arm1), (3, arm2), (3, arm3), (3, arm4)])
+
+    gmsh.option.setNumber("Mesh.Algorithm", 6)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", meshsize)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", meshsize)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 0.5)
+    gmsh.option.setNumber("General.Verbosity", 0)
+
+    gmsh.model.occ.synchronize()
+    gmsh.model.mesh.generate(3)
+    
+    # Save the mesh
+    gmsh.write(msh_file)
+    gmsh.finalize()
+    # Define the intersection points
+    pq11 = [l/2, l/2, l/2]
+    pq12 = [l/2, l/2, -l/2]
+    pq21 = [-l/2, l/2, l/2]
+    pq22 = [-l/2, l/2, -l/2]
+    pq31 = [-l/2, -l/2, l/2]
+    pq32 = [-l/2, -l/2, -l/2]
+    pq41 = [l/2, -l/2, l/2]
+    pq42 = [l/2, -l/2, -l/2]
+    
+    # Define the vertexes
+    pq1v1=[l/2+l2,l/2,l/2]
+    pq1v2=[l/2,l/2+l2,-l/2]
+    pq2v1=[-l/2-l2,l/2,l/2]
+    pq2v2=[-l/2,l/2+l2,-l/2]
+    pq3v1=[-l/2-l2,-l/2,l/2]
+    pq3v2=[-l/2,-l/2-l2,-l/2]
+    pq4v1=[l/2+l2,-l/2,l/2]
+    pq4v2=[l/2,-l/2-l2,-l/2]
+    # Intersection points
+    t = 0.5  # Midpoint    
+    pq10 = find_point_on_line(pq1v1, pq1v2, t)
+    pq20 = find_point_on_line(pq2v1, pq2v2, t)
+    pq30 = find_point_on_line(pq3v1, pq3v2, t)
+    pq40 = find_point_on_line(pq4v1, pq4v2, t)
+
+    # Combine all points into a list
+    nonconvex_vertex = [pq11, pq12, pq21, pq22, pq31, pq32, pq41, pq42, pq10, pq20, pq30, pq40]
+       
+    
+    
+    print(nonconvex_vertex)
+    nci = NonConvexInterceptor(obt_bisec=np.array(nonconvex_vertex), ext_bdry=None, unit_normal=None, l_dir=None)
+
+
+
+   
+    
+    nci.use = 'bisec'
+    return Shape(P=None,nonconvex_interceptor=nci, msh_file=msh_file)
+   
+def find_point_on_line(p1, p2, t):
+    x1, y1, z1 = p1
+    x2, y2, z2 = p2
+    
+    x = (1 - t) * x1 + t * x2
+    y = (1 - t) * y1 + t * y2
+    z = (1 - t) * z1 + t * z2
+    
+    return [x, y, z]
+
+
+
 def plus3d(l = 1e-3,meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'):
    
     msh_file = meshdata_dir+'/plus3d_'+str(filename_suffix)+'.msh'
@@ -2147,8 +2317,9 @@ def plus3d(l = 1e-3,meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'
 
 #----------------------------plus 3D end--------------------------------------------------
 
-#------------------------------------------------------------------------------------------
 
+def sphere_small_3d():
+    return Shape(P=None, nonconvex_interceptor=None, msh_file='meshdata/3d/3d_sphere_small.msh')
 
 
 def cube_3d(lx=1e-3, ly=1e-3,lz=1e-3,meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'):
@@ -2187,12 +2358,10 @@ def cube_3d(lx=1e-3, ly=1e-3,lz=1e-3,meshsize=1e-3, meshdata_dir='meshdata', fil
 
 
     return Shape(P=None,nonconvex_interceptor=None, msh_file=msh_file)
-def sphere_small_3d():
-    return Shape(P=None, nonconvex_interceptor=None, msh_file='meshdata/3d/3d_sphere_small.msh')
 
 def sphere_3d(rad=1e-3, meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'):
 
-    msh_file = meshdata_dir+'/Tsphere_'+str(filename_suffix)+'.msh'
+    msh_file = meshdata_dir+'/sphere_'+str(filename_suffix)+'.msh'
     gmsh.initialize()
 
     ## See: https://gmsh.info/doc/texinfo/gmsh.html#index-gmsh_002fmodel_002focc_002faddSphere
@@ -2227,6 +2396,70 @@ def box_extrude_3d(xyz=[0,0,0], L1=1e-3, L2=1e-3, L3=1e-3, meshsize=0.5e-3, mesh
     # 2nd, 3rd, 4th arguments are x, y, z values to which to extrude
     # numElements is the number of steps by which we extrude, heights is the scaling factor
     gmsh.model.occ.extrude([(2, 1)], 0, 0, L3, numElements=[nz], heights=[1])
+
+    gmsh.option.setNumber("Mesh.Algorithm", 6);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 1);
+    gmsh.option.setNumber("General.Verbosity", 0);
+
+    gmsh.model.occ.synchronize() # obligatory before generating the mesh
+    gmsh.model.mesh.generate(3) # generate a 3D mesh...
+    gmsh.write(msh_file) # save to file
+    gmsh.finalize() # close gmsh, as opposed to initialize()
+
+    return Shape(P=None, nonconvex_interceptor=None, msh_file=msh_file)
+
+def cylinder_3d_extrude(xyz=[0,0,0], rad=1e-3, L3=1e-3, meshsize=0.5e-3, meshdata_dir='meshdata', filename_suffix='00'):
+
+    msh_file = meshdata_dir+'/cyl_'+str(filename_suffix)+'.msh'
+    gmsh.initialize()
+
+    gmsh.model.occ.addCircle(xyz[0], xyz[1], xyz[2], rad, tag=1)
+
+    # gmsh.model.occ.addCircle(0, 0, -h/2, r_sc*R, tag=2)
+    # nz = L3/meshsize
+
+    # # extruding the line: dimension 2, tag 1 i.e., (2,1)
+    # # 2nd, 3rd, 4th arguments are x, y, z values to which to extrude
+    # # numElements is the number of steps by which we extrude, heights is the scaling factor
+    # gmsh.model.occ.extrude([(2, 1)], 0, 0, L3, numElements=[nz], heights=[1])
+
+    gmsh.option.setNumber("Mesh.Algorithm", 6);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", meshsize);
+    gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 1);
+    gmsh.option.setNumber("General.Verbosity", 0);
+
+    gmsh.model.occ.synchronize() # obligatory before generating the mesh
+    gmsh.model.mesh.generate(3) # generate a 3D mesh...
+    gmsh.write(msh_file) # save to file
+    gmsh.finalize() # close gmsh, as opposed to initialize()
+
+    return Shape(P=None, nonconvex_interceptor=None, msh_file=msh_file)
+
+
+def cylinder_3d(xyz=[0,0,0], rad=1e-3, L3=1e-3, meshsize=0.5e-3, meshdata_dir='meshdata', filename_suffix='00', direction='z'):
+
+    msh_file = meshdata_dir+'/box_'+str(filename_suffix)+'.msh'
+    gmsh.initialize()
+
+    # gmsh.model.occ.addCylinder(x, y, z, dx, dy, dz, r, tag = -1, angle = 2*pi)
+    #
+    # Add a cylinder in the OpenCASCADE CAD representation, defined by the center (x, y, z) of its first circular face, the 3 components (dx, dy, dz) of the vector defining its axis and its radius r. The optional angle argument defines the angular opening (from 0 to 2*Pi). If tag is positive, set the tag explicitly; otherwise a new tag is selected automatically. Return the tag of the cylinder.
+
+    if direction == 'z':
+        gmsh.model.occ.addCylinder(xyz[0], xyz[1], xyz[2], 0, 0, L3, rad, tag=1)
+    elif direction == 'y':
+        gmsh.model.occ.addCylinder(xyz[0], xyz[1], xyz[2], 0, L3, 0, rad, tag=1)
+    elif direction == 'x':
+        gmsh.model.occ.addCylinder(xyz[0], xyz[1], xyz[2], L3, 0, 0, rad, tag=1)
+    # nz = L3/meshsize
+
+    # # extruding the line: dimension 2, tag 1 i.e., (2,1)
+    # # 2nd, 3rd, 4th arguments are x, y, z values to which to extrude
+    # # numElements is the number of steps by which we extrude, heights is the scaling factor
+    # gmsh.model.occ.extrude([(2, 1)], 0, 0, L3, numElements=[nz], heights=[1])
 
     gmsh.option.setNumber("Mesh.Algorithm", 6);
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", meshsize);
@@ -2470,6 +2703,8 @@ def sphere_unit_3d():
 
 def plus_small_3d():
     return Shape(P=None, nonconvex_interceptor=None, msh_file='meshdata/3d/3d_plus_small.msh')
+def sphere_small_3d():
+    return Shape(P=None, nonconvex_interceptor=None, msh_file='meshdata/3d/3d_sphere_small.msh')
 
 
 #######################################################################
