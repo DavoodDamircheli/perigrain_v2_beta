@@ -7,60 +7,6 @@ non_hpc_cores=4
 
 frac="nofrac"
 
-# input from command line arg
-arglist=""
-# while getopts af:ph:r:L:x:h:y:t:R:G:K:n:v: flag
-while getopts a:c:f:G:h:K:L:pr:R:t:m:n:v::x:y: flag
-do
-    case "${flag}" in
-        a) 
-	    acc="--acc_val ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        c) 
-	    contact_rad_factor="--contact_rad_factor ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-	f)
-	    frac="frac";;
-        G) 
-	    G_scale="--G_scale ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        h) 
-	    mshfac="--meshsize_factor ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        K) 
-	    K_scale="--K_scale ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        L) 
-	    L="--L ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        m) 
-	    delta_factor="--delta_factor ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        n) 
-	    non_hpc_cores=${OPTARG};;
-        p) 
-	    plot="--plot";;
-        r) 
-	    particle_rad="--particle_rad ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        R) 
-	    rho_scale="--rho_scale ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        t) 
-	    wallh_ratio="--wallh_ratio ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        v) 
-	    vel="--vel_val ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        x) 
-	    nx="--nx ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-        y) 
-	    ny="--ny ${OPTARG}"
-	    arglist="${arglist}_${flag}-${OPTARG}";;
-    esac
-done
-
 
 #resume="yes"
 resume="no"
@@ -80,7 +26,8 @@ else
 fi
 
 # create subdirectory
-dir=$data_output_loc/${frac}_${arglist}
+dir="examples_output/$dirname/N28"
+
 
 config=$dir/main.conf
 sfile=$dir/setup.h5
@@ -167,7 +114,7 @@ gen_plot(){
     # cmap='Greys_r'
     cmap='Greys'
     # cmap='viridis'
-    python3 plot3d_timestep.py --all_dir $dir
+    python3 plot3d_timestep.py --all_dir $dir --dotsize 30
     echo "$dir"
     sxiv $dir/*.png &
 }
@@ -178,6 +125,13 @@ extract(){
 
     # two directories to keep quantities.h5 data for each particle
     newdir=$dir/P_A
+
+
+
+
+
+
+
     mkdir $newdir
     python3 $path/extract.py --data_dir $dir --wheel_ind 0 --output_file $newdir/quantities.h5
 
@@ -206,7 +160,7 @@ create_env
 gen_setup
 run
 gen_plot
-#extract
-multiplot
-#
-gen_vid
+# #extract
+#multiplot
+# #
+#gen_vid

@@ -27,13 +27,13 @@ parser.add_argument('--ny', type=int, help='number of particles in y dir', defau
 parser.add_argument('--vel_val', type=float, help='initial velocity', default=-20)
 parser.add_argument('--acc_val', type=float, help='initial velocity', default=-10)
 
-parser.add_argument('--G_scale', type=float, help='shear modulus scaling', default=0.5)
+parser.add_argument('--G_scale', type=float, help='shear modulus scaling', default=0.9)
 parser.add_argument('--Gnot_scale', type=float, help='shear modulus scaling', default=1e-4)
 parser.add_argument('--K_scale', type=float, help='bulk modulus scaling', default=0.5)
 parser.add_argument('--rho_scale', type=float, help='density scaling', default=1)
 
 parser.add_argument('--meshsize_factor', type=float, help='meshsize factor compared to radius', default=4)
-parser.add_argument('--delta_factor', type=float, help='delta factor compared to radius', default=3)
+parser.add_argument('--delta_factor', type=float, help='delta factor compared to radius', default=4)
 parser.add_argument('--contact_rad_factor', type=float, help='contact radius factor compared to radius', default=4)
 
 parser.add_argument('--setup_file', type=str, help='output setup directory', default='data/hdf5/all.h5')
@@ -47,9 +47,9 @@ print('saving experiment setup to', args.setup_file)
 """ Two particles colliding in 3D
 """
 
-lx = 1e-4  
-ly = 1e-4 
-lz = 1e-4 
+lx = 2e-4  
+ly = 2e-4 
+lz = 2e-4 
 rad = np.min([lx,ly,lz])
 ## Original
 # delta = rad/2
@@ -63,8 +63,9 @@ contact_radius = rad/args.contact_rad_factor    # conserves momentum better (tha
 
 SL = ShapeList()
 
-shape=shape_dict.plus3d(l=lx, meshsize=meshsize)
+#shape=shape_dict.plus3d(l=lx, meshsize=meshsize)
 
+shape=shape_dict.plus3d_longHand(l=lx,l2=3*lx, meshsize=meshsize)
 material = material_dict.peridem_3d(delta)
 
 # material = material_dict.kalthoff3d(delta)
@@ -80,22 +81,26 @@ material.print()
 particles = SL.generate_mesh(dimension = 3, contact_radius=contact_radius, plot_node_text=False)
 
 # apply transformation
-particles[0][0].rotate3d('z', np.pi/2)
-particles[0][1].rotate3d('z', -np.pi/2)
+particles[0][0].rotate3d('y', 1*np.pi/2)
+particles[0][1].rotate3d('y', 1*-np.pi/2)
 particles[0][1].shift([0, 0, 2*rad+contact_radius*1.1])
-# particles[0][1].shift([0, 0, 2.6e-3])
+particles[0][1].shift([-0*lx, 4.4*lx, -1.1*lx])
+#particles[0][1].shift([-0*lx, 3.2*lx, -2.1*lx])
 
+#particles[0][1].shift([0, 0, 0])
 # Initial data
+particles[0][0].movable = 1 
+particles[0][0].vel += [0, 0, -args.vel_val]
 particles[0][1].vel += [0, 0, args.vel_val]
 # particles[0][1].acc += [0, 0, -16e4]
 # particles[0][1].extforce += [0, 0, -16e4 * particles[0][1].material.rho]
 
 # wall info
 
-L = 10e-4
+L = 20e-4
 x_min = -L
 y_min = -L
-z_min = -L
+z_min = -8e-4
 x_max = L
 y_max = L
 z_max = L
@@ -109,6 +114,24 @@ wall = Wall3d(1, x_min, y_min, z_min, x_max, y_max, z_max)
 normal_stiffness = material_dict.peridem_3d(contact_radius).cnot / contact_radius
 
 # normal_stiffness = 15 * mat.E /( np.pi * np.power(delta,5) * (1 - 2*mat.nu));
+
+
+# a1 = lx/2
+# b1 = lx-2*notch_dist_corner
+# c1 = notch_dist_corner
+#
+# if clamp:
+#     for i in range(len(sheet.pos)):
+#         #if (np.abs(sheet.pos[i,2] - (ly/5)) < delta):                   #
+#         if np.abs(sheet.pos[i,2] )> ly/1-20*a :                   #
+#             x = sheet.pos[i,0]
+#             if (np.abs(x) >=c1/2-2*a): #or x<=c1-a  ):   #----X-value pos[i,0]
+#                 sheet.clamped_nodes.append(i)
+#     print("clamp nodes are")
+#     print(sheet.clamped_nodes)
+#
+
+
 
 damping_ratio = 0.8
 friction_coefficient = 0.8
