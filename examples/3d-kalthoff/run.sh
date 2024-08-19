@@ -90,7 +90,7 @@ plot="--plot"
 echo "#####################################################"
 
 # paths
-dir="$data_output_loc/kalthof3d_1"
+dir="$data_output_loc/kalthof3d_3d_figure"
 #dir=$data_output_loc/${frac}_${arglist}
 config=$dir/main.conf
 sfile=$dir/setup.h5
@@ -153,9 +153,11 @@ gen_plot(){
     # cmap='Greys_r'
     #cmap='Greys'
     cmap='viridis'
-    python3 plot3d_timestep.py --data_dir $dir --img_dir $dir --setup_file $sfile --dotsize 9 --view_az 5 --view_angle 90  
+    python3 plot3d_timestep.py --all_dir $dir --setup_file $sfile --dotsize 9 --view_az 30 --view_angle 45  
     #python3 plot3d_timestep.py --all_dir $dir --img_dir $dir --setup_file $sfile --dotsize 5 
     #python3 plot3d_timestep.py --all_dir $dir  
+    echo "this is dir"
+    echo $dir
     echo "$dir"
     sxiv $dir/*.png &
 }
@@ -197,11 +199,11 @@ gen_vid(){
     ./gen_vid.sh $dir
 }
 #creat_env
-gen_setup
-
-run
+#gen_setup
+#
+#run
 gen_plot
-multiplot
-gen_vid
+# multiplot
+# gen_vid
 :<<'COMMENT'
 COMMENT
