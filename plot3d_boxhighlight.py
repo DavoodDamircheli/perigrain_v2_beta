@@ -204,7 +204,7 @@ def genplot(t):
             # Highlight specific region
             x1m, x2m, y1m, y2m, z1m, z2m = args.highlight_region
             highlight_mask = (Pos[:, 0] >= x1m) & (Pos[:, 0] <= x2m) & (Pos[:, 1] >= y1m) & (Pos[:, 1] <= y2m) & (Pos[:, 2] >= z1m) & (Pos[:, 2] <= z2m)
-            ax.scatter(Pos[highlight_mask, 0], Pos[highlight_mask, 1], Pos[highlight_mask, 2], c=(144/255,238/255,144/255), s=dval, marker='.', linewidth=0, alpha=0.2)
+            ax.scatter(Pos[highlight_mask, 0], Pos[highlight_mask, 1], Pos[highlight_mask, 2], c=(255/255,160/255,122/255), s=dval, marker='.', linewidth=0, alpha=0.2)
 
             if args.plot_contact_force:
                 if pid == args.wheel_ind:

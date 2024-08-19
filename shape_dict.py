@@ -11,7 +11,7 @@ from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
 
 import pdb
-pdb.set_trace()
+#pdb.set_trace()
 class Shape:
     """Returns the boundary nodes and the nonconvex_interceptor"""
     def __init__(self, P, nonconvex_interceptor=None, msh_file = None, pygmsh_geom=None, scale_mesh_to=None, centroid_origin=False):
@@ -1317,13 +1317,13 @@ def gmsh_test(scaling=1e-3, meshsize=1e-3):
 #######################################################################
 
 #-------------- double sphere-------------------------
-def hollow_sphere(R=200e-3, r=100e-3, meshsize=1e-3, meshdata_dir='meshdata', filename_suffix='00'):
+def hollow_sphere(R=200e-3, r=100e-3, meshsize=10e-3, meshdata_dir='meshdata', filename_suffix='00'):
     msh_file = meshdata_dir+'/hollow_sphere_'+str(filename_suffix)+'.msh'
     # Initialize Gmsh
     gmsh.initialize()
 
     # Create a new model
-    gmsh.model.add("Sphere with Hollow Sphere")
+    #gmsh.model.add("Sphere with Hollow Sphere")
     myOrigx, myOrigy, myOrigz = 0,0,0
     cx = -myOrigx
     cy = -myOrigy
@@ -1333,7 +1333,7 @@ def hollow_sphere(R=200e-3, r=100e-3, meshsize=1e-3, meshdata_dir='meshdata', fi
     # r   : Inner sphere radius
 
     # Global characteristic length for finer mesh
-    lc = meshsize  # Adjust this value to make the mesh finer or coarser
+    #lc = meshsize  # Adjust this value to make the mesh finer or coarser
 
     # Add the outer sphere
     outer_sphere = gmsh.model.occ.addSphere(cx, cy, cz, R)
@@ -1348,7 +1348,7 @@ def hollow_sphere(R=200e-3, r=100e-3, meshsize=1e-3, meshdata_dir='meshdata', fi
     gmsh.model.occ.synchronize()
 
     # Set the mesh size for the entire model
-    gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lc)
+    #gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lc)
 
     
 
@@ -1371,7 +1371,8 @@ def hollow_sphere(R=200e-3, r=100e-3, meshsize=1e-3, meshdata_dir='meshdata', fi
     #print(nonconvex_vertex)
     nci = NonConvexInterceptor(obt_bisec=np.array(nonconvex_vertex), ext_bdry=None, unit_normal=None, l_dir=None)
 
-    
+    print("this is nonconvex_vertex")
+    print(nonconvex_vertex)         
     nci.use = 'bisec'
     return Shape(P=None,nonconvex_interceptor=nci, msh_file=msh_file)
 

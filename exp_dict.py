@@ -19,7 +19,8 @@ import shape_dict
 import material_dict
 from genmesh import genmesh
 from arrangements import get_incenter_mesh_loc
-
+import pdb
+#pdb.set_trace()
 #######################################################################
 class Material(object):
     """docstring for Material"""
@@ -84,7 +85,6 @@ def single_bond_ext(ij_pair, pos, delta, remove_ncvx_bonds, interceptor):
     # else:
         # return None
 
-import numpy as np
 
 
 #-----------------intersection of line segment with 3d wall-------------
@@ -280,7 +280,7 @@ class Particle(object):
     Convention: All member variables are made accessible in the first level to make it compatible with other functions, i.e. self.pos instead of self.mesh.pos
     """
     # def __init__(self, shape, meshsize, material):
-    def __init__(self, mesh, shape, material, nbdarr_in_parallel=True, keep_mesh=False):
+    def __init__(self, mesh, shape, material, nbdarr_in_parallel=True, keep_mesh=False,shape_type='kalthoff'):
         self.shape = shape
 
         if keep_mesh:
@@ -364,20 +364,36 @@ class Particle(object):
         r = self.interceptor
         self.wallsCoordinate = r 
         #print("-----------------------this is nonconcex-intercetor----------")
-        self.name = 'plus3d' 
+        self.name = shape_type 
+        # nbdarr_in_parallel=1 
+        # if nbdarr_in_parallel:
+        #     print('nbdarr in parallel')
+        #     ## parallel attempt
+        #     a_pool = Pool()
+        #     if (self.dim==3):
+        #        if self.name == 'kalthoff':
+        #            all_bonds = a_pool.map(self.single_bond_3d_kalthoff, combinations(range(total_nodes), 2))
+        #        if self.name == 'plus3d':
+        #            all_bonds = a_pool.map(self.single_bond_3d_plus3d, combinations(range(total_nodes), 2))
+        #        elif self.name == 'hollow_sphere':
+        #            all_bonds = a_pool.map(self.single_bond_3d_sphere, combinations(range(total_nodes), 2))  
+        #     else:
+        #         all_bonds = a_pool.map(self.single_bond, combinations(range(total_nodes),2)) 
+
+        nbdarr_in_parallel = 1
         if nbdarr_in_parallel:
             print('nbdarr in parallel')
-            ## parallel attempt
-            a_pool = Pool()
-            if (self.dim==3):
-               if self.name == 'kalthoff':
-                   all_bonds = a_pool.map(self.single_bond_3d_kalthoff, combinations(range(total_nodes), 2))
-               if self.name == 'plus3d':
-                   all_bonds = a_pool.map(self.single_bond_3d_plus3d, combinations(range(total_nodes), 2))
-               elif self.name == 'halow_sphere':
-                   all_bonds = a_pool.map(self.single_bond_3d_shpere, combinations(range(total_nodes), 2))  
-            else:
-                all_bonds = a_pool.map(self.single_bond, combinations(range(total_nodes),2)) 
+            with Pool() as a_pool:
+                if self.dim == 3:
+                    if self.name == 'kalthoff':
+                        all_bonds = a_pool.map(self.single_bond_3d_kalthoff, combinations(range(total_nodes), 2))
+                    elif self.name == 'plus3d':
+                        all_bonds = a_pool.map(self.single_bond_3d_plus3d, combinations(range(total_nodes), 2))
+                    elif self.name == 'hollow_sphere':
+                        all_bonds = a_pool.map(self.single_bond_3d_sphere, combinations(range(total_nodes), 2))
+                else:
+                    all_bonds = a_pool.map(self.single_bond, combinations(range(total_nodes), 2))
+        # No need to explicitly close/join with the 'with' context
         else:
             ## Serial version
             print('nbdarr in serial')
@@ -387,8 +403,10 @@ class Particle(object):
                 if(self.dim==3):
                     if self.name=='kalthoff':
                         all_bonds.append(self.single_bond_3d_alpha(ij)) 
-                    elif self.name=='halow_sphere':
-                        all_bonds.append(self.single_bond_shpere(ij)) 
+                    if self.name == 'plus3d':
+                        all_bonds.append(self.single_bond_3d_plus3d(ij))
+                    elif self.name=='hollow_sphere':
+                        all_bonds.append(self.single_bond_3d_sphere(ij)) 
    
                 else:
                     all_bonds.append( self.single_bond(ij))
@@ -583,7 +601,7 @@ class Particle(object):
                 #print("remove is on") 
                 intersects = False
                 for k in range(1):
-                    if (line_sphere_intersection(p_i, p_j, cx, cy, cz, inside_rad))):                   
+                    if (line_sphere_intersection(p_i, p_j, cx, cy, cz, inside_rad)):                   
                         intersects = True
                         break
 
@@ -592,10 +610,6 @@ class Particle(object):
             else:
                 return [i,j]
 
-
-
-
-    
      #--------------eliminiating bonds in 3d alpha--------------
     def single_bond_3d_kalthoff(self, ij_pair):
         # print('ij', ij_pair, end='\n', flush=True)
@@ -839,7 +853,7 @@ class ShapeList(object):
 
         # self.msh_file_list = []
 
-    def append(self, shape, count, meshsize, material, plot_shape = True):
+    def append(self, shape, count, meshsize, material, plot_shape = True,shape_type='kalthoff'):
     # def append(self, shape, count, meshsize, material, msh_file= None):
         """TODO: Docstring for append.
 
@@ -854,6 +868,7 @@ class ShapeList(object):
         self.count_list.append(count)
         self.meshsize_list.append(meshsize)
         self.material_list.append(material)
+        self.shape_type=shape_type
 
 
 
@@ -911,7 +926,7 @@ class ShapeList(object):
 
             # print('total mesh volume: ', np.sum(mesh.vol))
 
-            PP = Particle(mesh=mesh, shape=self.shape_list[sh], material=self.material_list[sh], nbdarr_in_parallel=nbdarr_in_parallel, keep_mesh=keep_mesh)
+            PP = Particle(mesh=mesh, shape=self.shape_list[sh], material=self.material_list[sh], nbdarr_in_parallel=nbdarr_in_parallel, keep_mesh=keep_mesh,shape_type=self.shape_type)
             nnodes = len(PP.pos)
             print(str(sh)+'('+str(nnodes)+')', end=' ', flush=True)
 

@@ -13,7 +13,8 @@ matplotlib.use('Agg')
 from matplotlib.collections import LineCollection
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
 from sys import argv
-
+import pdb
+#pdb.set_trace()
 import argparse
 # Instantiate the parser
 parser = argparse.ArgumentParser(description='Optional app description')
@@ -40,8 +41,8 @@ parser.add_argument('--nocolorbar', action='store_true', help='do not show color
 parser.add_argument('--seaborn', action='store_true', help='use seaborn package')
 
 parser.add_argument('--view_az', type=float, help='camera azimuthal', default=30)
-parser.add_argument('--view_angle', type=float, help='camera horizontal angle', default=30)
-parser.add_argument('--motion', action='store_true', help='camera motion')
+parser.add_argument('--view_angle', type=float, help='camera horizontal angle', default=45)
+parser.add_argument('--motion', action='store_true', help='camera motion',default=1)
 parser.add_argument('--motion_az_stepsize', type=float, help='camera azimuthal step size', default=0)
 parser.add_argument('--motion_angle_stepsize', type=float, help='camera horizontal angle step size', default=0)
 
@@ -77,10 +78,10 @@ if args.all_dir:
 # plot info
 plotinfo_file = data_dir+'/plotinfo.h5'
 p = h5py.File(plotinfo_file, "r")
-fc = int(p['f_l_counter'][0])
-lc = int(p['f_l_counter'][1])
-dt = float(p['dt'][0])
-modulo = int(p['modulo'][0])
+fc = int(p['f_l_counter'][0,0])
+lc = int(p['f_l_counter'][1,0])
+dt = float(p['dt'][0,0])
+modulo = int(p['modulo'][0,0])
 
 if args.fc:
     fc = args.fc
@@ -146,7 +147,7 @@ def genplot(t):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-
+    #highlight_coords = [(1,1,1),(1,1,3)]
     f = h5py.File(filename, "r")
     for name in f:
         if re.match(r'P_[0-9]+', name):
