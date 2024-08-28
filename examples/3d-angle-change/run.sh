@@ -17,8 +17,9 @@ echo "#####################################################"
 # paths
 # dir=/home/davood/Downloads/kalthoff_different_angle/OUT_RESULT
 #dir=/home/davood/Downloads/kalthoff_different_angle/one_image
-#
-dir=/home/davood/Downloads/plus3d_col
+dir=/home/davood/Downloads/3d-paper-results/kalthoff_3d
+
+#dir=/home/davood/Downloads/plus3d_col
 gen_plot(){
 
     echo 'gen_plot:Generating plots'
@@ -35,11 +36,11 @@ gen_plot(){
     #python3 plot_kalthoff.py --all_dir $dir --setup_file $dir/setup.h5 --dotsize .5 --view_az 10 --view_angle 30  
     # 
     #python3 plot_kalthoff_filter.py --all_dir $dir --setup_file $dir/setup.h5 --dotsize 10.0 --view_az 20 --view_angle 210  
-    #####python3 plot_kalthoff_filter.py --all_dir $dir --setup_file $dir/setup.h5 --dotsize 15.0 --view_az 11 --view_angle 145  
+    python3 plot_kalthoff_filter.py --all_dir $dir --setup_file $dir/setup.h5 --dotsize 15.0 --view_az 40 --view_angle 115  
     #python3 plot_kalthoff_plotly.py --all_dir $dir --setup_file $dir/setup.h5 --dotsize 10.0 --view_az 5 --view_angle 30  
     #------------------plus -3d----------------------
 
-    python3 plot_3d_paper_filter.py --all_dir $dir --setup_file $dir/setup.h5 --dotsize 10.0 --view_az 11 --view_angle 0  
+    #python3 plot_3d_paper_filter_v2.py --all_dir $dir --setup_file $dir/setup.h5 --dotsize 1.0 --view_az 11 --view_angle 30  
     #sxiv $dir/*.png &
 }
 echo "#####################################################"
