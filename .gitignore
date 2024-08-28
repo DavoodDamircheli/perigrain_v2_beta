@@ -21,6 +21,9 @@ tempDav/aux*
 *.h5
 examples_output/
 tree/
-__pychache__
+a_pychache__
 localExamOutput/
 *.sif
+*.swp
+*bak*.*bak*
+examples/3d-bulk-gravity/2d*
