@@ -54,12 +54,12 @@ print('saving experiment setup to', args.setup_file)
 
 rad = 100e-3
 lx = rad
-#n_x, n_y, n_z = (4, 4, 4)
-n_x, n_y, n_z = (1,1,2)
+n_x, n_y, n_z = (3, 3, 5)
+#n_x, n_y, n_z = (1,1,2)
 mf = args.meshsize_factor
 mf = 4
 
-count = 2
+count = 45
 delta = rad/args.delta_factor
 meshsize = rad/mf
 contact_radius = rad/args.contact_rad_factor    # conserves momentum better (than delta/3)

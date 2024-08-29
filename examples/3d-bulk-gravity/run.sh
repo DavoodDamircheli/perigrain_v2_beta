@@ -46,7 +46,7 @@ mpirun -n 12 bin/simulate3d -c $path/base.conf -i $dir/setup.h5 -o $dir
 #---------------Genrate plots----------------
 
 #python3 plot3d_timestep.py --all_dir $dir --dotsize 30 --lc=50
-python3 plot3d_timestep.py --all_dir $dir --dotsize 30 --lc=50
+python3 plot3d_timestep.py --all_dir $dir --dotsize 90 --lc=50
 
 
 
